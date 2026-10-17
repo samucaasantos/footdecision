@@ -96,11 +96,6 @@ coverage/
 .env.test.local
 .env.production.local
 
-# Configurações locais do Spring Boot com credenciais/senhas
-application-local.properties
-application-local.yaml
-application-local.yml
-
 # Manter modelos de variáveis versionados
 !.env.example
 !.env.template
