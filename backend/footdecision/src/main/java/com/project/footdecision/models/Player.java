@@ -7,6 +7,7 @@ import lombok.Getter;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.Objects;
 
 
 @Getter
@@ -19,17 +20,29 @@ public class Player implements Serializable {
     private Long id;
 
     private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
     private Position position;
+
     private Integer age;
+
+    @Column(name = "current_club")
     private String currentClub;
+
+    @Column(name = "market_value")
     private BigDecimal marketValue;
+
+    @Column(name = "fair_market_value")
     private BigDecimal fairMarketValue;
+
     private BigDecimal salary;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "injury_risk", length = 20, nullable = false)
+    @Column(name = "injury_risk", length = 10)
     private InjuryRisk injuryRisk;
 
+    @OneToOne(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
     private PlayerMetrics metrics;
 
     public Player() {
@@ -52,11 +65,11 @@ public class Player implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
 
         Player player = (Player) o;
-        return getId().equals(player.getId());
+        return Objects.equals(getId(), player.getId());
     }
 
     @Override
     public int hashCode() {
-        return getId().hashCode();
+        return Objects.hashCode(getId());
     }
 }

@@ -1,36 +1,66 @@
 package com.project.footdecision.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.project.footdecision.models.enums.Position;
 import jakarta.persistence.*;
 import lombok.Getter;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 
 @Getter
 @Entity
 @Table(name = "player_metrics")
 public class PlayerMetrics implements Serializable {
+
     @Id
+    @Column(name = "player_id")
     private Long playerId;
 
+    @Column(name = "minutes_played")
     private Integer minutesPlayed;
+
+    @Column(name = "cluster_id")
     private Integer clusterId;
+
+    @Column(name = "progressive_passes_p90")
     private Double progressivePassesP90;
+
+    @Column(name = "tackles_p90")
     private Double tacklesP90;
+
+    @Column(name = "sca_p90")
     private Double scaP90;
+
+    @Column(name = "progressive_carries_p90")
     private Double progressiveCarriesP90;
+
+    @Column(name = "expected_goals_p90")
     private Double expectedGoalsP90;
+
+    @Column(name = "expected_assists_p90")
     private Double expectedAssistsP90;
+
+    @Column(name = "goals_conceded_p90")
     private Double goalsConcededP90;
+
+    @Column(name = "save_percentage")
     private Double savePercentage;
+
+    @Column(name = "clean_sheet_percentage")
     private Double cleanSheetPercentage;
+
+    @Column(name = "shots_on_target_against_p90")
     private Double shotsOnTargetAgainstP90;
+
+    @Column(name = "penalties_saved_p90")
     private Double penaltiesSavedP90;
 
     @JsonIgnore
     @OneToOne
     @MapsId
+    @JoinColumn(name = "player_id")
     private Player player;
 
     public PlayerMetrics() {
@@ -53,5 +83,20 @@ public class PlayerMetrics implements Serializable {
         this.penaltiesSavedP90 = penaltiesSavedP90;
     }
 
+    public Boolean isGoalKeeper() {
+        return player.getPosition() == Position.GK;
+    }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+
+        PlayerMetrics that = (PlayerMetrics) o;
+        return Objects.equals(getPlayerId(), that.getPlayerId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getPlayerId());
+    }
 }
