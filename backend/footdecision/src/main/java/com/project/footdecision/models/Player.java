@@ -39,7 +39,7 @@ public class Player implements Serializable {
     private BigDecimal salary;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "injury_risk", length = 10)
+    @Column(name = "injury_risk", length = 10, nullable = false)
     private InjuryRisk injuryRisk;
 
     @OneToOne(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)

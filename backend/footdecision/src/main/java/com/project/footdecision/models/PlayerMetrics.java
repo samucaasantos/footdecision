@@ -18,10 +18,10 @@ public class PlayerMetrics implements Serializable {
     @Column(name = "player_id")
     private Long playerId;
 
-    @Column(name = "minutes_played")
+    @Column(name = "minutes_played", nullable = false)
     private Integer minutesPlayed;
 
-    @Column(name = "cluster_id")
+    @Column(name = "cluster_id", nullable = false)
     private Integer clusterId;
 
     @Column(name = "progressive_passes_p90")
@@ -85,6 +85,34 @@ public class PlayerMetrics implements Serializable {
 
     public Boolean isGoalKeeper() {
         return player.getPosition() == Position.GK;
+    }
+
+    public double[] getOutfieldFeatureVector() {
+        return new double[] {
+                toPrimitive(progressivePassesP90),
+                toPrimitive(tacklesP90),
+                toPrimitive(scaP90),
+                toPrimitive(progressiveCarriesP90),
+                toPrimitive(expectedGoalsP90),
+                toPrimitive(expectedAssistsP90)
+        };
+    }
+
+    public double[] getGoalKeeperFeatureVector() {
+        return new double[] {
+                toPrimitive(goalsConcededP90),
+                toPrimitive(savePercentage),
+                toPrimitive(cleanSheetPercentage),
+                toPrimitive(shotsOnTargetAgainstP90),
+                toPrimitive(penaltiesSavedP90)
+        };
+    }
+
+    private double toPrimitive(Double value) {
+        if (value == null) {
+            return 0.0;
+        }
+        return value;
     }
 
     @Override
