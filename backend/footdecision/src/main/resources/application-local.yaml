@@ -28,3 +28,6 @@ spring:
   sql:
     init:
       mode: always
+
+jwt:
+  secret: ${JWT_SECRET:minha_chave_secreta_padrao_com_pelo_menos_32_caracteres}
