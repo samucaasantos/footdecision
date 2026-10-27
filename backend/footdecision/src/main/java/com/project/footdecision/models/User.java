@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 @Getter
 @Entity
@@ -14,15 +15,20 @@ public class User implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
 
     @Setter
-    String username;
+    private String username;
 
     @Setter
-    String fullname;
+    private String password;
 
-    UserRole role;
+    @Setter
+    private String fullname;
+
+    @Setter
+    @Enumerated(EnumType.STRING)
+    private UserRole role;
 
     public User(){
     }
@@ -34,7 +40,16 @@ public class User implements Serializable {
         this.role = role;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
 
+        User user = (User) o;
+        return Objects.equals(getId(), user.getId());
+    }
 
-
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getId());
+    }
 }
