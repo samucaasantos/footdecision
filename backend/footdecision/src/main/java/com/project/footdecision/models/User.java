@@ -18,6 +18,7 @@ public class User implements Serializable {
     private Long id;
 
     @Setter
+    @Column(unique = true, nullable = false)
     private String username;
 
     @Setter
