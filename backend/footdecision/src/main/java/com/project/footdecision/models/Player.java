@@ -4,6 +4,7 @@ import com.project.footdecision.models.enums.InjuryRisk;
 import com.project.footdecision.models.enums.Position;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -42,6 +43,10 @@ public class Player implements Serializable {
     @Column(name = "injury_risk", length = 10, nullable = false)
     private InjuryRisk injuryRisk;
 
+    @Setter
+    @Column(name = "is_squad_member", nullable = false)
+    private Boolean isSquadMember;
+
     @OneToOne(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
     private PlayerMetrics metrics;
 
@@ -58,6 +63,18 @@ public class Player implements Serializable {
         this.fairMarketValue = fairMarketValue;
         this.salary = salary;
         this.injuryRisk = injuryRisk;
+        this.isSquadMember = false;
+    }
+
+    public Player(Long id, String name, Position position, Integer age, BigDecimal salary, InjuryRisk injuryRisk) {
+        this.id = id;
+        this.name = name;
+        this.position = position;
+        this.age = age;
+        this.currentClub = "My Club";
+        this.salary = salary;
+        this.injuryRisk = injuryRisk;
+        this.isSquadMember = true;
     }
 
     @Override

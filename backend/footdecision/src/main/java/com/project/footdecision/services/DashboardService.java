@@ -19,11 +19,11 @@ public class DashboardService {
     public DashboardOverviewDTO getOverview() {
         BigDecimal totalPayroll = playerRepository.sumMonthlySalaries();
         BigDecimal transferBudgetCap; //verificar como implementar.
-        Integer totalSquad = Math.toIntExact(playerRepository.count());
+        Integer totalSquadCount = Math.toIntExact(playerRepository.count());
 
         Map<Position, Integer> distributionByPosition = getDistributionByPosition();
 
-        return new DashboardOverviewDTO(totalPayroll, transferBudgetCap, totalSquad, distributionByPosition);
+        return new DashboardOverviewDTO(totalPayroll, transferBudgetCap, totalSquadCount, distributionByPosition);
 
     }
 
