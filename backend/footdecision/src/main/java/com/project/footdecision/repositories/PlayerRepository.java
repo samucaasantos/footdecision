@@ -15,7 +15,8 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
     @Query("""
             SELECT p FROM Player p
             LEFT JOIN FETCH p.metrics
-            WHERE p.position = :position
+            WHERE p.isSquadMember = false
+              AND p.position = :position
               AND p.marketValue <= :maxBudget
               AND p.salary <= :maxSalary
             """)
@@ -24,8 +25,12 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
     @Query("SELECT p FROM Player p LEFT JOIN FETCH p.metrics WHERE p.id = :id")
     Optional<Player> findByIdWithMetrics(@Param("id") Long id);
 
-    Long countByPosition(Position position);
+    List<Player> findByIsSquadMemberTrue();
 
-    @Query("SELECT COALESCE(SUM(p.salary), 0) FROM Player p")
-    BigDecimal sumMonthlySalaries();
+    Long countByIsSquadMemberTrue();
+
+    Long countByPositionAndIsSquadMemberTrue(Position position);
+
+    @Query("SELECT COALESCE(SUM(p.salary), 0) FROM Player p WHERE p.isSquadMember = true")
+    BigDecimal sumMonthlySalariesBySquad();
 }

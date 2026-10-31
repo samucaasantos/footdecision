@@ -66,8 +66,7 @@ public class Player implements Serializable {
         this.isSquadMember = false;
     }
 
-    public Player(Long id, String name, Position position, Integer age, BigDecimal salary, InjuryRisk injuryRisk) {
-        this.id = id;
+    public Player(String name, Position position, Integer age, BigDecimal salary, InjuryRisk injuryRisk) {
         this.name = name;
         this.position = position;
         this.age = age;

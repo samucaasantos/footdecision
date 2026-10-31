@@ -15,10 +15,10 @@ import java.util.Optional;
 public class UserService {
 
     @Autowired
-    UserRepository userRepository;
+    private UserRepository userRepository;
 
     @Autowired
-    PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
     public UserResponseDTO register(UserRegisterRequestDTO request) {
         if (userRepository.existsByUsername(request.username())) {
@@ -33,7 +33,7 @@ public class UserService {
         user.setFullname(request.fullname());
         user.setRole(request.role());
 
-        userRepository.save(user);
+        user = userRepository.save(user);
 
         return UserResponseDTO.fromEntity(user);
     }

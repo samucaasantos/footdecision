@@ -9,6 +9,7 @@ public record DashboardOverviewDTO(
         BigDecimal totalPayroll,
         BigDecimal transferBudgetCap,
         Integer totalSquadCount,
+        Position priorityTacticalNeed,
         Map<Position, Integer> distributionByPosition
 ) {
 }

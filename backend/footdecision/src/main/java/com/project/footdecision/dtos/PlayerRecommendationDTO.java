@@ -14,10 +14,10 @@ public record PlayerRecommendationDTO(
         InjuryRisk injuryRisk,
         Double finalScore,
         Double tacticalSimilarity,
-        Double economicOportunity,
+        Double economicOpportunity,
         DeterministicReportDTO technicalReport
 ) {
-    public static PlayerRecommendationDTO fromEntity(Player player, Double finalScore, Double tacticalSimilarity, Double economicOportunity, DeterministicReportDTO technicalReport) {
+    public static PlayerRecommendationDTO fromEntity(Player player, Double finalScore, Double tacticalSimilarity, Double economicOpportunity, DeterministicReportDTO technicalReport) {
         return new PlayerRecommendationDTO(
                 player.getId(),
                 player.getName(),
@@ -27,7 +27,7 @@ public record PlayerRecommendationDTO(
                 player.getInjuryRisk(),
                 finalScore,
                 tacticalSimilarity,
-                economicOportunity,
+                economicOpportunity,
                 technicalReport
                 );
     }
