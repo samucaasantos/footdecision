@@ -91,6 +91,5 @@ public class DashboardService {
         } catch (DataIntegrityViolationException e) {
             throw new DatabaseException(e.getMessage());
         }
-
     }
 }
