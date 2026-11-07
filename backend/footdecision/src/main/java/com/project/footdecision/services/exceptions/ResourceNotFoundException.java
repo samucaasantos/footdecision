@@ -8,4 +8,8 @@ public class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(Long id) {
         super("Recurso não encontrado. Id " + id);
     }
+
+    public ResourceNotFoundException() {
+        super("Recurso não encontrado. Jogador cadastrado não possui métricas de scouting");
+    }
 }
