@@ -5,21 +5,20 @@ import com.project.footdecision.dtos.UserResponseDTO;
 import com.project.footdecision.models.User;
 import com.project.footdecision.repositories.UserRepository;
 import com.project.footdecision.services.exceptions.ResourceNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
+    @Transactional
     public UserResponseDTO register(UserRegisterRequestDTO request) {
         if (userRepository.existsByUsername(request.username())) {
             throw new IllegalArgumentException("Username já em uso");
@@ -38,6 +37,7 @@ public class UserService {
         return UserResponseDTO.fromEntity(user);
     }
 
+    @Transactional(readOnly = true)
     public User findByUsername(String username) {
         Optional<User> user = userRepository.findByUsername(username);
         return user.orElseThrow(() -> new ResourceNotFoundException(username));

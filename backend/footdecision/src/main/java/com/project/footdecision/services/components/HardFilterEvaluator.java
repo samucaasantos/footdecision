@@ -3,16 +3,15 @@ package com.project.footdecision.services.components;
 import com.project.footdecision.dtos.SimulationRequestDTO;
 import com.project.footdecision.models.Player;
 import com.project.footdecision.repositories.PlayerRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class HardFilterEvaluator {
-
-    @Autowired
-    private PlayerRepository playerRepository;
+    private final PlayerRepository playerRepository;
 
     public List<Player> filter(SimulationRequestDTO request) {
         return playerRepository.findEligiblePlayers(request.targetPosition(), request.maxTransferBudget(), request.maxMonthlySalary())

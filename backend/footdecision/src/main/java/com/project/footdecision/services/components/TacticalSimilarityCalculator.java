@@ -2,14 +2,13 @@ package com.project.footdecision.services.components;
 
 import com.project.footdecision.models.PlayerMetrics;
 import com.project.footdecision.models.enums.Position;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class TacticalSimilarityCalculator {
-
-    @Autowired
-    private ClusterCentroidRegistry centroidRegistry;
+    private final ClusterCentroidRegistry centroidRegistry;
 
     public Double calculate(PlayerMetrics metrics, Position position, Integer clusterId) {
         double[] playerVector;

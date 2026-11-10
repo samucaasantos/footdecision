@@ -9,23 +9,22 @@ import com.project.footdecision.models.enums.Position;
 import com.project.footdecision.repositories.PlayerRepository;
 import com.project.footdecision.services.exceptions.DatabaseException;
 import com.project.footdecision.services.exceptions.ResourceNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class DashboardService {
-
-    @Autowired
-    private PlayerRepository playerRepository;
-
+    private final PlayerRepository playerRepository;
     private BigDecimal transferBudgetCap = BigDecimal.ZERO;
-
     private Position priorityTacticalNeed = Position.MF;
 
+    @Transactional(readOnly = true)
     public DashboardOverviewDTO getOverview() {
         BigDecimal totalPayroll = playerRepository.sumMonthlySalariesBySquad();
         Integer totalSquadCount = Math.toIntExact(playerRepository.countByIsSquadMemberTrue());
@@ -53,6 +52,7 @@ public class DashboardService {
         return getOverview();
     }
 
+    @Transactional
     public SquadPlayerResponseDTO addSquadPlayer(SquadPlayerRequestDTO request) {
         Player player = new Player(
                 request.name(),
@@ -67,6 +67,7 @@ public class DashboardService {
         return SquadPlayerResponseDTO.fromEntity(player);
     }
 
+    @Transactional(readOnly = true)
     public List<SquadPlayerResponseDTO> getSquadPlayers() {
         List<Player> squadPlayers = playerRepository.findByIsSquadMemberTrue();
         List<SquadPlayerResponseDTO> squad = new ArrayList<>();
@@ -80,9 +81,10 @@ public class DashboardService {
 
     }
 
+    @Transactional
     public void removeSquadPlayer(Long id)  {
         Player player = playerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(id));
-        if (player.getIsSquadMember() == false) {
+        if (!player.getIsSquadMember()) {
             throw new ResourceNotFoundException(id);
         }
 

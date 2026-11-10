@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Locale;
 
 @Service
 public class DeterministicReportService {
@@ -30,7 +31,7 @@ public class DeterministicReportService {
         } else {
             diagnosis = "baixa";
         }
-        return String.format("O atleta possui aderência tática %s ao perfil buscado para a posição, possuindo %.1f%% de similaridade e %.2f de score final.", diagnosis, percentage, score);
+        return String.format(Locale.forLanguageTag("pt-BR"), "O atleta possui aderência tática %s ao perfil buscado para a posição, possuindo %.1f%% de similaridade e %.2f de score final.", diagnosis, percentage, score);
     }
 
     private String economicCostBenefit(Double econOpp) {
@@ -51,11 +52,11 @@ public class DeterministicReportService {
                 .divide(maxSalary, 4, RoundingMode.HALF_UP)
                 .doubleValue() * 100.0;
         if (salaryRatio < 50.0) {
-            impact = String.format("Baixo impacto na folha salarial (consome %.1f%% do teto definido).", salaryRatio);
+            impact = String.format(Locale.forLanguageTag("pt-BR"), "Baixo impacto na folha salarial (consome %.1f%% do teto definido).", salaryRatio);
         } else if (salaryRatio <= 80.0) {
-            impact = String.format("Impacto moderado na folha salarial (consome %.1f%% do teto definido)", salaryRatio);
+            impact = String.format(Locale.forLanguageTag("pt-BR"), "Impacto moderado na folha salarial (consome %.1f%% do teto definido)", salaryRatio);
         } else {
-            impact = String.format("Alto impacto na folha salarial (consome %.1f%% do teto definido)", salaryRatio);
+            impact = String.format(Locale.forLanguageTag("pt-BR"), "Alto impacto na folha salarial (consome %.1f%% do teto definido)", salaryRatio);
         }
         return impact;
     }

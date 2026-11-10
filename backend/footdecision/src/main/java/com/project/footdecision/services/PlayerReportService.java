@@ -7,8 +7,9 @@ import com.project.footdecision.models.PlayerMetrics;
 import com.project.footdecision.repositories.PlayerRepository;
 import com.project.footdecision.services.components.ClusterCentroidRegistry;
 import com.project.footdecision.services.exceptions.ResourceNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,14 +17,12 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class PlayerReportService {
+    private final PlayerRepository playerRepository;
+    private final ClusterCentroidRegistry centroidRegistry;
 
-    @Autowired
-    private PlayerRepository playerRepository;
-
-    @Autowired
-    private ClusterCentroidRegistry centroidRegistry;
-
+    @Transactional(readOnly = true)
     public PlayerReportDTO getPlayerReport(Long id) {
         Optional<Player> player = playerRepository.findByIdWithMetrics(id);
         Player reportedPlayer = player.orElseThrow(() -> new ResourceNotFoundException(id));

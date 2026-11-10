@@ -3,8 +3,8 @@ package com.project.footdecision.config;
 import com.project.footdecision.models.User;
 import com.project.footdecision.models.enums.UserRole;
 import com.project.footdecision.repositories.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -13,13 +13,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 @Profile({"local", "prod"})
+@RequiredArgsConstructor
 public class QuickFillConfig implements CommandLineRunner {
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String @NonNull ... args) throws Exception {

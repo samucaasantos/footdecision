@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 
 
@@ -86,6 +87,23 @@ public class PlayerMetrics implements Serializable {
     public Boolean isGoalKeeper() {
         return player.getPosition() == Position.GK;
     }
+
+    public static final List<String> OUTFIELD_METRIC_NAMES = List.of(
+            "progressivePassesP90",
+            "tacklesP90",
+            "scaP90",
+            "progressiveCarriesP90",
+            "expectedGoalsP90",
+            "expectedAssistsP90"
+    );
+
+    public static final List<String> GOALKEEPER_METRIC_NAMES = List.of(
+            "goalsConcededP90",
+            "savePercentage",
+            "cleanSheetPercentage",
+            "shotsOnTargetAgainstP90",
+            "penaltiesSavedP90"
+    );
 
     public double[] getOutfieldFeatureVector() {
         return new double[] {

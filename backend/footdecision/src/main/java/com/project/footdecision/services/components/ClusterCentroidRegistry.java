@@ -3,21 +3,20 @@ package com.project.footdecision.services.components;
 import com.project.footdecision.models.PlayerMetrics;
 import com.project.footdecision.models.enums.Position;
 import com.project.footdecision.repositories.PlayerMetricsRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
+@RequiredArgsConstructor
 public class ClusterCentroidRegistry {
+    private final PlayerMetricsRepository playerMetricsRepository;
 
-    @Autowired
-    private PlayerMetricsRepository playerMetricsRepository;
-
-    private final Map<String, double[]> centroids = new HashMap<>();
+    private final Map<String, double[]> centroids = new ConcurrentHashMap<>();
 
     public double[] getCentroid(Position position, Integer clusterId) {
         if (centroids.isEmpty()) {
@@ -43,29 +42,26 @@ public class ClusterCentroidRegistry {
         double[] centroid = getCentroid(position, clusterId);
         Map<String, Double> benchmarks = new LinkedHashMap<>();
         if (position == Position.GK) {
-            benchmarks.put("goalsConcededP90", centroid[0]);
-            benchmarks.put("savePercentage", centroid[1]);
-            benchmarks.put("cleanSheetPercentage", centroid[2]);
-            benchmarks.put("shotsOnTargetAgainstP90", centroid[3]);
-            benchmarks.put("penaltiesSavedP90", centroid[4]);
+            for (int i = 0; i < PlayerMetrics.GOALKEEPER_METRIC_NAMES.size(); i++) {
+                benchmarks.put(PlayerMetrics.GOALKEEPER_METRIC_NAMES.get(i), centroid[i]);
+            }
         } else {
-            benchmarks.put("progressivePassesP90", centroid[0]);
-            benchmarks.put("tacklesP90", centroid[1]);
-            benchmarks.put("scaP90", centroid[2]);
-            benchmarks.put("progressiveCarriesP90", centroid[3]);
-            benchmarks.put("expectedGoalsP90", centroid[4]);
-            benchmarks.put("expectedAssistsP90", centroid[5]);
+            for (int i = 0; i < PlayerMetrics.OUTFIELD_METRIC_NAMES.size(); i++) {
+                benchmarks.put(PlayerMetrics.OUTFIELD_METRIC_NAMES.get(i), centroid[i]);
+            }
         }
         return benchmarks;
     }
 
-    private void loadCentroids() {
-        centroids.put("OUTFIELD_1", calculateCentroid(1, false));
-        centroids.put("OUTFIELD_2", calculateCentroid(2, false));
-        centroids.put("OUTFIELD_3", calculateCentroid(3, false));
-        centroids.put("GOALKEEPER_4", calculateCentroid(4, true));
-        centroids.put("GOALKEEPER_5", calculateCentroid(5, true));
-        centroids.put("GOALKEEPER_6", calculateCentroid(6, true));
+    private synchronized void loadCentroids() {
+        if (centroids.isEmpty()) {
+            centroids.put("OUTFIELD_1", calculateCentroid(1, false));
+            centroids.put("OUTFIELD_2", calculateCentroid(2, false));
+            centroids.put("OUTFIELD_3", calculateCentroid(3, false));
+            centroids.put("GOALKEEPER_4", calculateCentroid(4, true));
+            centroids.put("GOALKEEPER_5", calculateCentroid(5, true));
+            centroids.put("GOALKEEPER_6", calculateCentroid(6, true));
+        }
     }
 
     private double[] calculateCentroid(int clusterId, boolean isGoalkeeper) {
@@ -73,9 +69,9 @@ public class ClusterCentroidRegistry {
         double[] centroid;
         int size;
         if (isGoalkeeper) {
-            size = 5;
+            size = PlayerMetrics.GOALKEEPER_METRIC_NAMES.size();
         } else {
-            size = 6;
+            size = PlayerMetrics.OUTFIELD_METRIC_NAMES.size();
         }
         centroid = new double[size];
 
