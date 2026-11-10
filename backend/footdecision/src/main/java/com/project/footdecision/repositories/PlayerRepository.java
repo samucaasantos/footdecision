@@ -14,7 +14,7 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
 
     @Query("""
             SELECT p FROM Player p
-            LEFT JOIN FETCH p.metrics
+            JOIN FETCH p.metrics
             WHERE p.isSquadMember = false
               AND p.position = :position
               AND p.marketValue <= :maxBudget
