@@ -1,5 +1,6 @@
 package com.project.footdecision.services.components;
 
+import com.project.footdecision.models.enums.InjuryRisk;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -7,7 +8,7 @@ public class WeightedSumModelEvaluator {
 
     public Double calculateScore(Double tacticalSim, Double econOpp, Double riskScore, Double w1, Double w2, Double w3) {
         double[] normalizedWeights = normalizeWeights(w1, w2, w3);
-        double normalizedRisk = ((riskScore - 1) / 2.0);
+        double normalizedRisk = normalizeRisk(riskScore);
         return tacticalSim * normalizedWeights[0] + econOpp * normalizedWeights[1] + (1.0 - normalizedRisk) * normalizedWeights[2];
     }
 
@@ -23,5 +24,12 @@ public class WeightedSumModelEvaluator {
             vector[i] /= sum;
         }
         return vector;
+    }
+
+    private double normalizeRisk(Double riskScore) {
+        double minRisk = InjuryRisk.BAIXO.getNumericRisk();
+        double maxRisk = InjuryRisk.ALTO.getNumericRisk();
+
+        return (riskScore - minRisk) / (maxRisk - minRisk);
     }
 }

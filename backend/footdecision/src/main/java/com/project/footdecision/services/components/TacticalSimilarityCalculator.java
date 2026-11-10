@@ -13,7 +13,7 @@ public class TacticalSimilarityCalculator {
 
     public Double calculate(PlayerMetrics metrics, Position position, Integer clusterId) {
         double[] playerVector;
-        if (metrics.isGoalKeeper()) {
+        if (position == Position.GK) {
             playerVector = metrics.getGoalKeeperFeatureVector();
         } else {
             playerVector = metrics.getOutfieldFeatureVector();
@@ -26,11 +26,18 @@ public class TacticalSimilarityCalculator {
     }
 
     private Double euclideanDistance(double[] v1, double[] v2) {
+        if (v1.length != v2.length) {
+            throw new IllegalArgumentException("Os tamanhos dos vetores são diferentes. Eles devem ser iguais!");
+        }
+
         double sum = 0.0;
         for (int i = 0; i < v1.length; i++) {
-            double diff = v1[i] - v2[i];
-            sum += diff * diff;
+            if (v2[i] > 0) {
+                double diff = (v1[i] - v2[i]) / v2[i];
+                sum += diff * diff;
+            }
         }
+        sum /= v1.length;
         return Math.sqrt(sum);
     }
 }
