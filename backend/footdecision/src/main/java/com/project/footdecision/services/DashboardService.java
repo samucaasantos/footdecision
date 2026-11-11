@@ -78,7 +78,6 @@ public class DashboardService {
         }
 
         return squad;
-
     }
 
     @Transactional
