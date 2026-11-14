@@ -45,9 +45,8 @@ export default function TacticalRadarChart({
       const rawPlayer = Number(m.playerValue ?? 0);
       const rawCluster = Number(m.clusterAverageValue ?? 0);
 
-      // Normalize to a 0-100 comparative scale where cluster benchmark is anchored at 65
-      // so metrics of totally different scales (e.g., 0.12 xG vs 18.2 Progressive Passes)
-      // render with balanced geometry on the radar polygon.
+      // Anchor cluster benchmark at 74 on a 0-100 scale and floor at 38
+      // so the radar polygon is prominent, wide, and visually impactful.
       let ratio = 1;
       if (rawCluster > 0) {
         ratio = info.invertBetter ? rawCluster / Math.max(rawPlayer, 0.01) : rawPlayer / rawCluster;
@@ -55,9 +54,9 @@ export default function TacticalRadarChart({
         ratio = 1.25;
       }
 
-      const playerNormalized = Math.round(Math.min(100, Math.max(15, ratio * 65)));
-      const clusterNormalized = 65;
-      const simulatedPercentile = Math.min(99, Math.max(12, Math.round(playerNormalized * 0.96)));
+      const clusterNormalized = 74;
+      const playerNormalized = Math.round(Math.min(98, Math.max(38, ratio * 74)));
+      const simulatedPercentile = Math.min(99, Math.max(18, Math.round(playerNormalized * 0.97)));
 
       return {
         metricName: m.metricName,
@@ -77,16 +76,16 @@ export default function TacticalRadarChart({
 
   if (radarData.length === 0) {
     return (
-      <div className="h-[380px] flex items-center justify-center text-sm text-slate-400">
+      <div className="h-[460px] print:h-[310px] flex items-center justify-center text-sm text-slate-400">
         Sem métricas táticas disponíveis para plotagem.
       </div>
     );
   }
 
   return (
-    <div className="w-full h-[390px] sm:h-[430px] select-none">
+    <div className="w-full h-[460px] sm:h-[510px] print:h-[310px] select-none">
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+        <RadarChart cx="50%" cy="50%" outerRadius="82%" data={radarData}>
           <PolarGrid stroke="#1e293b" strokeDasharray="3 3" />
           <PolarAngleAxis
             dataKey="axisLabel"
@@ -97,10 +96,10 @@ export default function TacticalRadarChart({
                 <g transform={`translate(${x},${y})`}>
                   <text
                     x={0}
-                    y={-4}
+                    y={-5}
                     textAnchor="middle"
-                    fill="#e2e8f0"
-                    fontSize={11}
+                    fill="#f1f5f9"
+                    fontSize={12}
                     fontWeight={600}
                   >
                     {payload.value}
@@ -111,7 +110,7 @@ export default function TacticalRadarChart({
                       y={11}
                       textAnchor="middle"
                       fill="#10b981"
-                      fontSize={10}
+                      fontSize={10.5}
                       fontFamily="monospace"
                       fontWeight={700}
                     >
@@ -125,7 +124,7 @@ export default function TacticalRadarChart({
           <PolarRadiusAxis
             angle={90}
             domain={[0, 100]}
-            tickCount={3}
+            tickCount={4}
             tick={{ fill: "#64748b", fontSize: 9 }}
             axisLine={false}
           />
@@ -135,10 +134,11 @@ export default function TacticalRadarChart({
             name="Média do Cluster"
             dataKey="clusterNormalized"
             stroke="#94a3b8"
-            strokeWidth={1.8}
-            strokeDasharray="4 4"
+            strokeWidth={2}
+            strokeDasharray="5 4"
             fill="#475569"
-            fillOpacity={0.12}
+            fillOpacity={0.16}
+            isAnimationActive={false}
           />
 
           {/* Player Polygon (Solid Emerald) */}
@@ -146,10 +146,11 @@ export default function TacticalRadarChart({
             name={playerName}
             dataKey="playerNormalized"
             stroke="#10b981"
-            strokeWidth={2.5}
+            strokeWidth={3}
             fill="#10b981"
-            fillOpacity={0.28}
-            dot={{ r: 3.5, fill: "#10b981", stroke: "#052e16", strokeWidth: 1.5 }}
+            fillOpacity={0.34}
+            dot={{ r: 4.5, fill: "#10b981", stroke: "#052e16", strokeWidth: 1.8 }}
+            isAnimationActive={false}
           />
 
           <Tooltip

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { User, Lock, ArrowRight, Shield, BookOpen, Headphones, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { SoccerBallIcon } from "@/components/SoccerBallIcon";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -72,21 +73,15 @@ export default function LoginPage() {
         <div className="text-center mb-7">
           <div className="inline-flex items-center gap-3">
             <div className="h-11 w-11 rounded-xl bg-emerald-500 flex items-center justify-center text-slate-950 shadow-lg shadow-emerald-500/25">
-              <svg
-                className="h-6 w-6"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.3"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <polygon points="12 7 15.5 9.5 14 13.5 10 13.5 8.5 9.5 12 7" />
-              </svg>
+              <SoccerBallIcon className="h-6 w-6" />
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight">
               <span className="text-emerald-400">Foot</span>
               <span className="text-white">Decision</span>
             </h1>
+            <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-mono font-bold text-emerald-400">
+              v1.0.0
+            </span>
           </div>
           <p className="mt-3 text-[11px] font-mono tracking-[0.25em] text-emerald-400/80 uppercase leading-relaxed">
             SISTEMA DE APOIO À DECISÃO E SCOUTING
@@ -206,7 +201,7 @@ export default function LoginPage() {
                 Acesso Diretor Executivo
               </span>
               <span className="px-2.5 py-1 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-mono font-semibold text-emerald-400">
-                ROLE_DIRECTOR
+                DIRETOR
               </span>
             </button>
 
@@ -219,7 +214,7 @@ export default function LoginPage() {
                 Acesso Analista de Scouting
               </span>
               <span className="px-2.5 py-1 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-mono font-semibold text-emerald-400">
-                ROLE_ANALYST
+                ANALISTA
               </span>
             </button>
           </div>
@@ -228,7 +223,7 @@ export default function LoginPage() {
         {/* Footer */}
         <footer className="mt-7 text-center space-y-3">
           <p className="text-xs text-slate-500">
-            © 2026 FootDecision SAD. Algorithmic Intelligence for Professional Football.
+            © 2026 FootDecision SAD · v1.0.0 (Ciclo Evolutivo Contínuo)
           </p>
           <div className="flex items-center justify-center gap-5 text-[10px] font-mono tracking-wider text-slate-500 uppercase">
             <span className="inline-flex items-center gap-1.5">

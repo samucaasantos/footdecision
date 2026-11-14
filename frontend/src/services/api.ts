@@ -19,6 +19,11 @@ export const API_BASE_URL =
 export const TOKEN_STORAGE_KEY = "footdecision_jwt_token";
 export const USER_STORAGE_KEY = "footdecision_auth_user";
 
+// Persistent UI state keys (preserved across page navigation and logout/login)
+export const DASHBOARD_STATE_STORAGE_KEY = "footdecision_dashboard_state_v1";
+export const SIMULATION_STATE_STORAGE_KEY = "footdecision_simulation_state_v1";
+export const LAST_DOSSIER_ID_STORAGE_KEY = "footdecision_last_dossier_id_v1";
+
 export class ApiClientError extends Error {
   public readonly status: number;
   public readonly errorType: string;
@@ -35,7 +40,7 @@ export class ApiClientError extends Error {
 
 function getStoredToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_STORAGE_KEY);
+  return sessionStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(TOKEN_STORAGE_KEY);
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -60,7 +65,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     throw new ApiClientError({
       status: 0,
       error: "NetworkError",
-      message: `Não foi possível conectar ao servidor (${API_BASE_URL}). Verifique se o Backend Spring Boot está em execução na porta 8080.`,
+      message: "Não foi possível conectar ao servidor.",
       path,
     });
   }
@@ -84,7 +89,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
             ? "Sessão expirada ou credenciais inválidas."
             : response.status === 403
               ? "Acesso negado: seu perfil não possui permissão para realizar esta operação."
-              : `Erro na requisição (${response.status}).`),
+              : "Não foi possível concluir a operação solicitada."),
         path: errorBody.path ?? path,
       });
     }
@@ -96,8 +101,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
         response.status === 401
           ? "Não autorizado. Faça login novamente."
           : response.status === 403
-            ? "Operação exclusiva para Diretor Executivo (ROLE_DIRECTOR)."
-            : `Erro inesperado na comunicação com a API (HTTP ${response.status}).`,
+            ? "Acesso negado para esta operação."
+            : "Erro inesperado na comunicação com o servidor.",
       path,
     });
   }

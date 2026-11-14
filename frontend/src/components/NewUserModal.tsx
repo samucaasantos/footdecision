@@ -55,7 +55,7 @@ export function NewUserModal({ isOpen, onClose, onSuccess }: NewUserModalProps) 
         role,
       });
 
-      const msg = `Usuário "${created.fullname}" (@${created.username}) cadastrado com perfil ${created.role}.`;
+      const msg = `Usuário "${created.fullname}" (@${created.username}) cadastrado com sucesso.`;
       setSuccessMessage(msg);
       onSuccess?.(msg);
 
@@ -191,33 +191,33 @@ export function NewUserModal({ isOpen, onClose, onSuccess }: NewUserModalProps) 
 
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-2">
-              Perfil de acesso (Role)
+              Perfil de acesso
             </label>
             <div className="grid grid-cols-2 gap-2.5 p-1.5 rounded-xl bg-[#091019] border border-slate-800">
               <button
                 type="button"
                 onClick={() => setRole("ROLE_DIRECTOR")}
-                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   role === "ROLE_DIRECTOR"
                     ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/50 shadow"
                     : "text-slate-400 hover:text-slate-200 border border-transparent"
                 }`}
               >
                 <Crown className="h-3.5 w-3.5" />
-                <span>ROLE_DIRECTOR</span>
+                <span>Diretor Executivo</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setRole("ROLE_ANALYST")}
-                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   role === "ROLE_ANALYST"
                     ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/50 shadow"
                     : "text-slate-400 hover:text-slate-200 border border-transparent"
                 }`}
               >
                 <LineChart className="h-3.5 w-3.5" />
-                <span>ROLE_ANALYST</span>
+                <span>Analista de Scouting</span>
               </button>
             </div>
 
@@ -230,28 +230,22 @@ export function NewUserModal({ isOpen, onClose, onSuccess }: NewUserModalProps) 
           </div>
 
           {/* Footer */}
-          <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-3">
-            <span className="text-[11px] font-mono text-slate-400">
-              Ação registrada · ROLE_DIRECTOR
-            </span>
-
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="px-4 py-2.5 rounded-xl border border-slate-700/80 bg-slate-900/70 hover:bg-slate-800 text-xs font-semibold text-slate-200 transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-xs font-bold text-slate-950 transition-colors shadow-lg shadow-emerald-500/20 cursor-pointer"
-              >
-                {isSubmitting ? "Cadastrando..." : "Cadastrar Membro"}
-              </button>
-            </div>
+          <div className="pt-4 border-t border-slate-800/80 flex items-center justify-end gap-2.5">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="px-4 py-2.5 rounded-xl border border-slate-700/80 bg-slate-900/70 hover:bg-slate-800 text-xs font-semibold text-slate-200 transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-xs font-bold text-slate-950 transition-colors shadow-lg shadow-emerald-500/20 cursor-pointer"
+            >
+              {isSubmitting ? "Cadastrando..." : "Cadastrar Membro"}
+            </button>
           </div>
         </form>
       </div>

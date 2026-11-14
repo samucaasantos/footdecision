@@ -6,17 +6,18 @@ import Link from "next/link";
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Lock,
   Plus,
   CheckCircle2,
   AlertCircle,
-  RefreshCw,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { NewUserModal } from "@/components/NewUserModal";
 import { AddSquadPlayerModal } from "@/components/AddSquadPlayerModal";
+import { NumericInput } from "@/components/NumericInput";
 import { useAuth } from "@/context/AuthContext";
-import { api } from "@/services/api";
+import { api, DASHBOARD_STATE_STORAGE_KEY } from "@/services/api";
 import {
   DashboardOverviewDTO,
   Position,
@@ -27,6 +28,7 @@ import {
   getInjuryRiskStyles,
   POSITION_METADATA,
 } from "@/utils/formatters";
+import { MAX_MONETARY_LIMIT } from "@/utils/marketPlayersCatalog";
 
 const PositionDistributionChart = dynamic(
   () => import("@/components/charts/PositionDistributionChart"),
@@ -45,6 +47,12 @@ const PositionDistributionChart = dynamic(
 
 const PAGE_SIZE = 6;
 
+interface PersistedDashboardState {
+  budgetCapInput?: string;
+  priorityNeedInput?: Position;
+  currentPage?: number;
+}
+
 export default function DashboardPage() {
   const { isDirector, isAuthenticated, isLoading: authLoading } = useAuth();
 
@@ -54,9 +62,10 @@ export default function DashboardPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Director Config Form State
+  // Director Config Form State (persisted across navigations and sessions)
   const [budgetCapInput, setBudgetCapInput] = useState<string>("");
   const [priorityNeedInput, setPriorityNeedInput] = useState<Position>("MF");
+  const [hasLoadedPersisted, setHasLoadedPersisted] = useState<boolean>(false);
   const [isUpdatingConfig, setIsUpdatingConfig] = useState<boolean>(false);
 
   // Table & Modals State
@@ -72,6 +81,19 @@ export default function DashboardPage() {
     }, 4000);
   }, []);
 
+  const saveDashboardState = useCallback((next: PersistedDashboardState) => {
+    try {
+      const existingRaw = localStorage.getItem(DASHBOARD_STATE_STORAGE_KEY);
+      const existing: PersistedDashboardState = existingRaw ? JSON.parse(existingRaw) : {};
+      localStorage.setItem(
+        DASHBOARD_STATE_STORAGE_KEY,
+        JSON.stringify({ ...existing, ...next })
+      );
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
+
   const loadDashboardData = useCallback(async () => {
     setErrorMessage(null);
     setIsLoadingData(true);
@@ -80,10 +102,33 @@ export default function DashboardPage() {
         api.dashboard.getOverview(),
         api.dashboard.getSquad(),
       ]);
-      setOverview(overviewRes);
+
+      let savedState: PersistedDashboardState = {};
+      try {
+        const raw = localStorage.getItem(DASHBOARD_STATE_STORAGE_KEY);
+        if (raw) savedState = JSON.parse(raw);
+      } catch {
+        // ignore
+      }
+
+      const effectivePriority =
+        savedState.priorityNeedInput ?? overviewRes.priorityTacticalNeed ?? "MF";
+      const effectiveBudgetStr =
+        savedState.budgetCapInput !== undefined && savedState.budgetCapInput !== ""
+          ? savedState.budgetCapInput
+          : String(overviewRes.transferBudgetCap ?? 0);
+
+      setOverview({
+        ...overviewRes,
+        priorityTacticalNeed: effectivePriority,
+      });
       setSquad(squadRes);
-      setBudgetCapInput(String(overviewRes.transferBudgetCap ?? 0));
-      setPriorityNeedInput(overviewRes.priorityTacticalNeed ?? "MF");
+      setBudgetCapInput(effectiveBudgetStr);
+      setPriorityNeedInput(effectivePriority);
+      if (savedState.currentPage) {
+        setCurrentPage(savedState.currentPage);
+      }
+      setHasLoadedPersisted(true);
     } catch (err) {
       setErrorMessage(
         err instanceof Error
@@ -101,13 +146,45 @@ export default function DashboardPage() {
     }
   }, [authLoading, isAuthenticated, loadDashboardData]);
 
+  // Keep localStorage synced whenever user changes inputs or page
+  useEffect(() => {
+    if (!hasLoadedPersisted) return;
+    saveDashboardState({
+      budgetCapInput,
+      priorityNeedInput,
+      currentPage,
+    });
+  }, [budgetCapInput, priorityNeedInput, currentPage, hasLoadedPersisted, saveDashboardState]);
+
+  const handlePriorityPositionChange = (newPos: Position) => {
+    setPriorityNeedInput(newPos);
+    setOverview((prev) =>
+      prev ? { ...prev, priorityTacticalNeed: newPos } : prev
+    );
+    saveDashboardState({ priorityNeedInput: newPos });
+  };
+
+  const handleBudgetInputChange = (newBudget: string) => {
+    setBudgetCapInput(newBudget);
+    saveDashboardState({ budgetCapInput: newBudget });
+  };
+
   const handleUpdateConfig = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isDirector || isUpdatingConfig) return;
 
     const numericBudget = Number(budgetCapInput);
-    if (Number.isNaN(numericBudget) || numericBudget < 0) {
-      setErrorMessage("O teto de transferências deve ser um valor maior ou igual a zero.");
+    if (
+      budgetCapInput.trim() === "" ||
+      Number.isNaN(numericBudget) ||
+      numericBudget < 0 ||
+      numericBudget > MAX_MONETARY_LIMIT
+    ) {
+      setErrorMessage(
+        `Informe um Teto de Transferências válido no intervalo de € 0 a ${formatCurrencyEUR(
+          MAX_MONETARY_LIMIT
+        )}.`
+      );
       return;
     }
 
@@ -119,8 +196,13 @@ export default function DashboardPage() {
         priorityTacticalNeed: priorityNeedInput,
       });
       setOverview(updated);
-      setBudgetCapInput(String(updated.transferBudgetCap));
+      const updatedBudgetStr = String(updated.transferBudgetCap);
+      setBudgetCapInput(updatedBudgetStr);
       setPriorityNeedInput(updated.priorityTacticalNeed);
+      saveDashboardState({
+        budgetCapInput: updatedBudgetStr,
+        priorityNeedInput: updated.priorityTacticalNeed,
+      });
       showToast("Configuração orçamentária e posição prioritária atualizadas com sucesso.");
     } catch (err) {
       setErrorMessage(
@@ -140,7 +222,10 @@ export default function DashboardPage() {
       await api.dashboard.removeSquadPlayer(player.id);
 
       const updatedOverview = await api.dashboard.getOverview();
-      setOverview(updatedOverview);
+      setOverview({
+        ...updatedOverview,
+        priorityTacticalNeed: priorityNeedInput,
+      });
       setSquad((prev) => prev.filter((p) => p.id !== player.id));
       showToast(`Atleta "${player.name}" removido do elenco.`);
     } catch (err) {
@@ -159,12 +244,15 @@ export default function DashboardPage() {
       showToast(`Atleta "${newPlayer.name}" adicionado ao elenco.`);
       try {
         const updatedOverview = await api.dashboard.getOverview();
-        setOverview(updatedOverview);
+        setOverview({
+          ...updatedOverview,
+          priorityTacticalNeed: priorityNeedInput,
+        });
       } catch {
         // Overview fallback if needed
       }
     },
-    [showToast]
+    [showToast, priorityNeedInput]
   );
 
   // Pagination calculations
@@ -175,8 +263,11 @@ export default function DashboardPage() {
     return squad.slice(start, start + PAGE_SIZE);
   }, [squad, safePage]);
 
+  // Active priority position reflects immediate selector changes AND persisted state
+  const activePriorityPosition: Position =
+    priorityNeedInput || overview?.priorityTacticalNeed || "MF";
   const priorityMeta =
-    POSITION_METADATA[overview?.priorityTacticalNeed || "MF"] || POSITION_METADATA.MF;
+    POSITION_METADATA[activePriorityPosition] || POSITION_METADATA.MF;
 
   const dist = overview?.distributionByPosition || { GK: 0, DF: 0, MF: 0, FW: 0 };
 
@@ -190,7 +281,7 @@ export default function DashboardPage() {
       }
     >
       <div className="space-y-6">
-        {/* Top Page Title Banner */}
+        {/* Top Page Title Banner (Sync button removed as requested) */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <p className="text-[11px] font-mono font-semibold tracking-[0.18em] text-emerald-400 uppercase">
@@ -205,19 +296,9 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3 self-start sm:self-end">
-            <button
-              type="button"
-              onClick={loadDashboardData}
-              disabled={isLoadingData}
-              className="px-3 py-1.5 rounded-lg bg-[#0D1724] border border-slate-800 hover:border-slate-700 text-xs text-slate-300 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="Recarregar dados"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${isLoadingData ? "animate-spin" : ""}`} />
-              <span>Sincronizar</span>
-            </button>
             <div className="px-3.5 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/25 inline-flex items-center gap-2 text-xs font-mono text-cyan-300">
               <span className="h-2 w-2 rounded-full bg-cyan-400" />
-              <span>Época 2026/27</span>
+              <span>Temporada Atual</span>
             </div>
           </div>
         </div>
@@ -296,14 +377,16 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              {/* KPI 4: Carência Tática Prioritária */}
+              {/* KPI 4: Carência Tática Prioritária (updates live with priorityNeedInput) */}
               <div className="h-[132px] rounded-2xl bg-[#0D1522] border border-amber-500/40 p-5 flex flex-col justify-between">
                 <p className="text-xs font-medium text-slate-300">Carência Tática Prioritária</p>
                 <div className="flex items-center gap-3">
                   <span className="px-3 py-1 rounded-lg bg-amber-500/15 border border-amber-500/40 text-lg font-mono font-extrabold text-amber-400">
                     {priorityMeta.code}
                   </span>
-                  <span className="text-xs font-semibold text-amber-400">Prioridade alta</span>
+                  <span className="text-xs font-semibold text-amber-400">
+                    {priorityMeta.label} · Prioridade alta
+                  </span>
                 </div>
                 <p className="text-xs text-amber-400/90 truncate">{priorityMeta.shortDescription}</p>
               </div>
@@ -311,7 +394,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Middle Row: Distribution Chart + Club Budget Config (RBAC gated) */}
+        {/* Middle Row: Distribution Chart + Club Budget Config */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Distribution by Position */}
           <div className="lg:col-span-6 rounded-2xl bg-[#0D1522] border border-slate-800/80 p-6 flex flex-col justify-between">
@@ -331,66 +414,61 @@ export default function DashboardPage() {
 
             <div className="pt-4 mt-4 border-t border-slate-800/70">
               <p className="text-xs text-amber-400">
-                {priorityMeta.code}: prioridade de perfil, não de volume no setor.
+                {priorityMeta.code} ({priorityMeta.label}): prioridade de perfil, não de volume no setor.
               </p>
             </div>
           </div>
 
-          {/* Club Budget Configuration (ROLE_DIRECTOR Exclusive Action) */}
+          {/* Club Budget Configuration */}
           <div className="lg:col-span-6 rounded-2xl bg-[#0B1720] border border-emerald-500/25 p-6 flex flex-col justify-between">
             <div>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-base sm:text-lg font-bold text-white">
-                    Configuração Orçamentária do Clube
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Parâmetros que orientam o planejamento de contratações.
-                  </p>
-                </div>
-
-                <span className="px-2.5 py-1 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-mono font-bold text-emerald-400 uppercase shrink-0">
-                  SÓ DIRETOR
-                </span>
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-white">
+                  Configuração Orçamentária do Clube
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Parâmetros que orientam o planejamento de contratações.
+                </p>
               </div>
 
               {isDirector ? (
-                <form onSubmit={handleUpdateConfig} className="mt-5 space-y-4">
+                <form noValidate onSubmit={handleUpdateConfig} className="mt-5 space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-slate-300 mb-2">
                         Teto de transferências (€)
                       </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          min={0}
-                          step="100000"
-                          required
-                          value={budgetCapInput}
-                          onChange={(e) => setBudgetCapInput(e.target.value)}
-                          className="w-full rounded-xl bg-[#081018] border border-slate-800 focus:border-emerald-500 focus:outline-none px-4 pr-14 py-3 text-sm font-mono text-white transition-colors"
-                        />
-                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400">
-                          EUR
-                        </span>
-                      </div>
+                      <NumericInput
+                        value={budgetCapInput}
+                        onChange={handleBudgetInputChange}
+                        min={0}
+                        max={MAX_MONETARY_LIMIT}
+                        step={100000}
+                        suffix="EUR"
+                        required
+                        inputClassName="py-3 bg-[#081018]"
+                      />
                     </div>
 
                     <div>
                       <label className="block text-xs font-medium text-slate-300 mb-2">
                         Posição prioritária
                       </label>
-                      <select
-                        value={priorityNeedInput}
-                        onChange={(e) => setPriorityNeedInput(e.target.value as Position)}
-                        className="w-full rounded-xl bg-[#081018] border border-slate-800 focus:border-emerald-500 focus:outline-none px-4 py-3 text-sm text-white transition-colors"
-                      >
-                        <option value="GK">GK · Goleiro</option>
-                        <option value="DF">DF · Defensor</option>
-                        <option value="MF">MF · Meio-campo</option>
-                        <option value="FW">FW · Atacante</option>
-                      </select>
+                      <div className="relative">
+                        <select
+                          value={priorityNeedInput}
+                          onChange={(e) =>
+                            handlePriorityPositionChange(e.target.value as Position)
+                          }
+                          className="appearance-none w-full rounded-xl bg-[#081018] border border-slate-800 focus:border-emerald-500 focus:outline-none pl-4 pr-11 py-3 text-sm text-white transition-colors cursor-pointer"
+                        >
+                          <option value="GK">GK · Goleiro</option>
+                          <option value="DF">DF · Defensor</option>
+                          <option value="MF">MF · Meio-campo</option>
+                          <option value="FW">FW · Atacante</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none h-4 w-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2" />
+                      </div>
                     </div>
                   </div>
 
@@ -402,19 +480,19 @@ export default function DashboardPage() {
                     >
                       {isUpdatingConfig ? "Atualizando..." : "Atualizar orçamento"}
                     </button>
-                    <span className="text-xs text-slate-400">Atualizado em 12 nov. 2026</span>
+                    <span className="text-xs text-slate-400">Parâmetros sincronizados</span>
                   </div>
                 </form>
               ) : (
                 <div className="mt-6 rounded-xl bg-[#081018]/90 border border-slate-800 p-5 space-y-3">
                   <div className="flex items-center gap-2.5 text-amber-400 text-xs font-semibold">
                     <Lock className="h-4 w-4 shrink-0" />
-                    <span>Modo Somente Leitura (Perfil Analista · ROLE_ANALYST)</span>
+                    <span>Modo Somente Leitura</span>
                   </div>
                   <p className="text-xs text-slate-400 leading-relaxed">
                     A edição de teto orçamentário, alteração da posição prioritária, gestão de
-                    contratos do elenco e o cadastro de novos membros são operações exclusivas do{" "}
-                    <strong className="text-slate-200">Diretor Executivo (ROLE_DIRECTOR)</strong>.
+                    contratos do elenco e o cadastro de novos membros são operações restritas à
+                    Direção Executiva.
                   </p>
                   <div className="pt-1 flex items-center gap-3">
                     <Link
@@ -611,12 +689,8 @@ export default function DashboardPage() {
 
         {/* Bottom Footnote */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-500 pt-1">
-          <span>FootDecision SAD · Sistema de Apoio à Decisão</span>
-          <span>
-            {isDirector
-              ? "Acesso executivo completo · ROLE_DIRECTOR"
-              : "Acesso analítico de consulta · ROLE_ANALYST"}
-          </span>
+          <span>FootDecision SAD · v1.0.0 (Release Inicial · Evolução Contínua)</span>
+          <span>Plataforma de Inteligência Esportiva</span>
         </div>
       </div>
 
@@ -630,7 +704,8 @@ export default function DashboardPage() {
           />
           <AddSquadPlayerModal
             isOpen={isAddPlayerModalOpen}
-            priorityPosition={overview?.priorityTacticalNeed || "MF"}
+            priorityPosition={activePriorityPosition}
+            clubBudgetCap={overview?.transferBudgetCap ?? 0}
             onClose={() => setIsAddPlayerModalOpen(false)}
             onPlayerAdded={handlePlayerAdded}
           />

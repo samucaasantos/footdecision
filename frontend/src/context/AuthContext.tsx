@@ -44,21 +44,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
-      const savedUserRaw = localStorage.getItem(USER_STORAGE_KEY);
+      // Remove any old persistent tokens from localStorage so opening the app fresh always requires login
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(USER_STORAGE_KEY);
+
+      const savedToken = sessionStorage.getItem(TOKEN_STORAGE_KEY);
+      const savedUserRaw = sessionStorage.getItem(USER_STORAGE_KEY);
       if (savedToken && savedUserRaw) {
         const parsedUser = JSON.parse(savedUserRaw) as AuthenticatedUser;
         if (parsedUser.expiresAt && Date.now() > parsedUser.expiresAt) {
-          localStorage.removeItem(TOKEN_STORAGE_KEY);
-          localStorage.removeItem(USER_STORAGE_KEY);
+          sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+          sessionStorage.removeItem(USER_STORAGE_KEY);
         } else {
           setToken(savedToken);
           setUser(parsedUser);
         }
       }
     } catch {
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
-      localStorage.removeItem(USER_STORAGE_KEY);
+      sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+      sessionStorage.removeItem(USER_STORAGE_KEY);
     } finally {
       setIsLoading(false);
     }
@@ -69,8 +73,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const isLoginPage = pathname === "/login";
     if (!token && !isLoginPage) {
       router.replace("/login");
-    } else if (token && isLoginPage) {
-      router.replace("/dashboard");
     }
   }, [isLoading, token, pathname, router]);
 
@@ -88,8 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         expiresAt,
       };
 
-      localStorage.setItem(TOKEN_STORAGE_KEY, response.token);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(authUser));
+      sessionStorage.setItem(TOKEN_STORAGE_KEY, response.token);
+      sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(authUser));
       setToken(response.token);
       setUser(authUser);
       router.push("/dashboard");
@@ -99,6 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    sessionStorage.removeItem(USER_STORAGE_KEY);
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(USER_STORAGE_KEY);
     setToken(null);

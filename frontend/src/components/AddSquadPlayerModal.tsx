@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ShieldPlus, X, User, AlertCircle } from "lucide-react";
 import { api } from "@/services/api";
 import { InjuryRisk, Position, SquadPlayerResponseDTO } from "@/types/api";
-import { formatCurrencyEUR } from "@/utils/formatters";
+import { formatCurrencyEUR, POSITION_METADATA } from "@/utils/formatters";
+import { MAX_MONETARY_LIMIT } from "@/utils/marketPlayersCatalog";
+import { NumericInput } from "@/components/NumericInput";
 
 interface AddSquadPlayerModalProps {
   isOpen: boolean;
   priorityPosition?: Position;
+  clubBudgetCap?: number;
   onClose: () => void;
   onPlayerAdded: (player: SquadPlayerResponseDTO) => void;
 }
@@ -19,20 +22,31 @@ const RISKS: InjuryRisk[] = ["Baixo", "Moderado", "Alto"];
 export function AddSquadPlayerModal({
   isOpen,
   priorityPosition = "MF",
+  clubBudgetCap = 0,
   onClose,
   onPlayerAdded,
 }: AddSquadPlayerModalProps) {
   const [name, setName] = useState("");
   const [position, setPosition] = useState<Position>(priorityPosition);
   const [age, setAge] = useState<string>("24");
-  const [salary, setSalary] = useState<string>("110000");
+  const [salary, setSalary] = useState<string>("0");
   const [injuryRisk, setInjuryRisk] = useState<InjuryRisk>("Baixo");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Sync priorityPosition whenever it changes or when the modal opens
+  useEffect(() => {
+    if (isOpen && priorityPosition) {
+      setPosition(priorityPosition);
+    }
+  }, [isOpen, priorityPosition]);
+
   if (!isOpen) return null;
 
   const parsedSalary = Number(salary) || 0;
+  const priorityMeta = POSITION_METADATA[priorityPosition] || POSITION_METADATA.MF;
+  const maxAllowedSalary =
+    clubBudgetCap && clubBudgetCap > 0 ? clubBudgetCap : MAX_MONETARY_LIMIT;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,12 +61,25 @@ export function AddSquadPlayerModal({
       setErrorMessage("Informe o nome completo do atleta.");
       return;
     }
-    if (!Number.isInteger(numericAge) || numericAge < 15 || numericAge > 59) {
-      setErrorMessage("A idade do atleta deve ser um número inteiro entre 15 e 59 anos.");
+    if (age.trim() === "" || !Number.isInteger(numericAge) || numericAge < 15 || numericAge > 59) {
+      setErrorMessage("A idade do atleta deve ser um número inteiro no intervalo de 15 a 59 anos.");
       return;
     }
-    if (Number.isNaN(numericSalary) || numericSalary < 0) {
-      setErrorMessage("O salário mensal deve ser um valor válido maior ou igual a zero.");
+    if (
+      salary.trim() === "" ||
+      Number.isNaN(numericSalary) ||
+      numericSalary < 0 ||
+      numericSalary > maxAllowedSalary
+    ) {
+      setErrorMessage(
+        clubBudgetCap && clubBudgetCap > 0
+          ? `O salário mensal deve estar no intervalo de € 0 a ${formatCurrencyEUR(
+              maxAllowedSalary
+            )} (limite do orçamento definido no Dashboard).`
+          : `O salário mensal deve estar no intervalo de € 0 a ${formatCurrencyEUR(
+              maxAllowedSalary
+            )}.`
+      );
       return;
     }
 
@@ -69,7 +96,7 @@ export function AddSquadPlayerModal({
       onPlayerAdded(created);
       setName("");
       setAge("24");
-      setSalary("110000");
+      setSalary("0");
       setInjuryRisk("Baixo");
       onClose();
     } catch (err) {
@@ -117,7 +144,7 @@ export function AddSquadPlayerModal({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form noValidate onSubmit={handleSubmit} className="p-6 space-y-5">
           {errorMessage && (
             <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-3.5 flex items-start gap-2.5 text-xs text-rose-300">
               <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
@@ -166,7 +193,7 @@ export function AddSquadPlayerModal({
             </div>
             <p className="mt-2 flex items-center gap-2 text-xs text-amber-400">
               <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0" />
-              {priorityPosition} é a posição prioritária definida pela direção.
+              {priorityPosition} ({priorityMeta.label}) é a posição prioritária definida pela direção.
             </p>
           </div>
 
@@ -174,45 +201,35 @@ export function AddSquadPlayerModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-2">
-                Idade
+                Idade (15 a 59 anos)
               </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  required
-                  min={15}
-                  max={59}
-                  value={age}
-                  onChange={(e) => setAge(e.target.value)}
-                  className="w-full rounded-xl bg-[#091019] border border-slate-800 focus:border-emerald-500 focus:outline-none px-4 pr-16 py-3 text-sm font-mono text-slate-100 transition-colors"
-                />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-mono text-slate-400">
-                  ANOS
-                </span>
-              </div>
+              <NumericInput
+                value={age}
+                onChange={setAge}
+                min={15}
+                max={59}
+                step={1}
+                suffix="ANOS"
+                required
+                inputClassName="py-3"
+              />
             </div>
 
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-2">
                 Salário Mensal (€)
               </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400">
-                  €
-                </span>
-                <input
-                  type="number"
-                  required
-                  min={0}
-                  step="500"
-                  value={salary}
-                  onChange={(e) => setSalary(e.target.value)}
-                  className="w-full rounded-xl bg-[#091019] border border-slate-800 focus:border-emerald-500 focus:outline-none pl-8 pr-14 py-3 text-sm font-mono text-slate-100 transition-colors"
-                />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-mono text-slate-400">
-                  EUR
-                </span>
-              </div>
+              <NumericInput
+                value={salary}
+                onChange={setSalary}
+                min={0}
+                max={maxAllowedSalary}
+                step={1000}
+                prefix="€"
+                suffix="EUR"
+                required
+                inputClassName="py-3"
+              />
             </div>
           </div>
 
@@ -250,33 +267,28 @@ export function AddSquadPlayerModal({
 
             <p className="mt-2.5 flex items-center gap-2 text-xs text-slate-400">
               <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
-              Impacto estimado na folha: +{formatCurrencyEUR(parsedSalary)} / mês.
+              Impacto estimado na folha: +{formatCurrencyEUR(parsedSalary)} / mês
+              {clubBudgetCap > 0 && ` (Teto do clube: ${formatCurrencyEUR(clubBudgetCap)})`}.
             </p>
           </div>
 
           {/* Footer */}
-          <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-3">
-            <span className="text-[11px] font-mono text-slate-400">
-              Ação registrada · ROLE_DIRECTOR
-            </span>
-
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="px-4 py-2.5 rounded-xl border border-slate-700/80 bg-slate-900/70 hover:bg-slate-800 text-xs font-semibold text-slate-200 transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-xs font-bold text-slate-950 transition-colors shadow-lg shadow-emerald-500/20 cursor-pointer"
-              >
-                {isSubmitting ? "Adicionando..." : "Adicionar ao Elenco"}
-              </button>
-            </div>
+          <div className="pt-4 border-t border-slate-800/80 flex items-center justify-end gap-2.5">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="px-4 py-2.5 rounded-xl border border-slate-700/80 bg-slate-900/70 hover:bg-slate-800 text-xs font-semibold text-slate-200 transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-xs font-bold text-slate-950 transition-colors shadow-lg shadow-emerald-500/20 cursor-pointer"
+            >
+              {isSubmitting ? "Adicionando..." : "Adicionar ao Elenco"}
+            </button>
           </div>
         </form>
       </div>
